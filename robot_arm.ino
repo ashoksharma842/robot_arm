@@ -6,7 +6,7 @@ enum eBUTTONS {MANUAL_BUTTON = 2, ENTER_BUTTON, AUTO_BUTTON, PROGRAM_BUTTON};
 enum eADC_DATA {BASE = 0, SHOULDER, ELBOW, GRIP};
 volatile int ADC_values[4] = {0};
 enum eOPERATING_MODE{MANUAL_MODE = 0, AUTO_MODE, PROGRAM_MODE};
-int operatingMode = MANUAL_MODE, prevOperatingMode = AUTO_MODE;
+int operatingMode = MANUAL_MODE, prevOperatingMode = MANUAL_MODE;
 unsigned int avg = 0;
 const unsigned int maxADCval = 1023; //check the max value of ADC
 
@@ -31,6 +31,7 @@ void setup() {
   myservo[ELBOW].attach(ELBOW_SERVO);
   myservo[SHOULDER].attach(SHOULDER_SERVO);
   myservo[BASE].attach(BASE_SERVO);
+  attachInterrupt(digitalPinToInterrupt(ENTER_BUTTON),EnterButtonPressed,RISING); 
 }
 
 void loop() {
@@ -45,6 +46,10 @@ void loop() {
   }
 }
 
+void EnterButtonPressed()
+{
+  Serial.println("enter button pressed");
+}
 void MoveArmFromProgrammedLocations(void)
 {
   //todo
