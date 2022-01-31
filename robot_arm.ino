@@ -8,7 +8,7 @@ volatile int ADC_values[4] = {0};
 enum eOPERATING_MODE{MANUAL_MODE = 0, AUTO_MODE, PROGRAM_MODE};
 int operatingMode = MANUAL_MODE;
 unsigned int avg = 0;
-const unsigned int maxADCval = 900; //check the max value of ADC
+const unsigned int maxADCval = 1023; //check the max value of ADC
 
 void setup() {
   Serial.begin(9600);
@@ -28,33 +28,50 @@ void setup() {
 void loop() {
   if(digitalRead(MANUAL_BUTTON) == HIGH){
     operatingMode = MANUAL_MODE;
-    digitalWrite(MANUAL_LED, HIGH);
-    digitalWrite(AUTO_LED, LOW);
-    digitalWrite(PROGRAM_LED, LOW);
   }
   if(digitalRead(AUTO_BUTTON) == HIGH){
     operatingMode = AUTO_MODE;
-    digitalWrite(MANUAL_LED, LOW);
-    digitalWrite(AUTO_LED, HIGH);
-    digitalWrite(PROGRAM_LED, LOW);
   }
   if(digitalRead(PROGRAM_BUTTON) == HIGH){
     operatingMode = PROGRAM_MODE;
-    digitalWrite(MANUAL_LED, LOW);
-    digitalWrite(AUTO_LED, LOW);
-    digitalWrite(PROGRAM_LED, HIGH);
   }
-//  Serial.print("MODE = ");Serial.print(operatingMode);
+  OperatingModeIndication(operatingMode);
+  
   for(int i = 0; i < 4; i++){
     for(int j = 0; j < 10; j++){
       avg += analogRead(i);
     }
-//    ADC_values[i] = analogRead(i);
     ADC_values[i] = avg/10;
-//    Serial.print("[");Serial.print(ADC_values[i]);Serial.print("]");
-    Serial.println(ADC_values[BASE]);
+    Serial.print("[");Serial.print(ADC_values[i]);Serial.print("]");
     avg = 0;
   }
-//  Serial.print("\n");
-  myservo[BASE].write(map(ADC_values[0], 0, maxADCval, 0, 180));
+  Serial.print("\n");
+  myservo[BASE].write(map(ADC_values[BASE], 0, maxADCval, 0, 180));
+  myservo[SHOULDER].write(map(ADC_values[SHOULDER], 0, maxADCval, 0, 180));
+  myservo[ELBOW].write(map(ADC_values[ELBOW], 0, maxADCval, 0, 180));
+  myservo[GRIP].write(map(ADC_values[GRIP], 0, maxADCval, 0, 180));
+}
+
+void OperatingModeIndication(int mode)
+{
+   switch(mode){
+     case(MANUAL_MODE): {
+      digitalWrite(MANUAL_LED, HIGH);
+      digitalWrite(AUTO_LED, LOW);
+      digitalWrite(PROGRAM_LED, LOW);
+      break;
+    }
+    case(AUTO_MODE): {
+      digitalWrite(MANUAL_LED, LOW);
+      digitalWrite(AUTO_LED, HIGH);
+      digitalWrite(PROGRAM_LED, LOW);
+      break;
+    }
+    case(PROGRAM_MODE): {
+      digitalWrite(MANUAL_LED, LOW);
+      digitalWrite(AUTO_LED, LOW);
+      digitalWrite(PROGRAM_LED, HIGH);
+      break;
+    }
+   }
 }
