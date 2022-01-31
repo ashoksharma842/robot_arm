@@ -1,4 +1,5 @@
 #include <Servo.h>
+#include <EEPROM.h>
 Servo myservo[4];
 enum eSERVO {GRIP_SERVO = 6, ELBOW_SERVO, SHOULDER_SERVO, BASE_SERVO};
 enum eLED {MANUAL_LED = 10, AUTO_LED, PROGRAM_LED};
@@ -16,9 +17,12 @@ enum eButtonStae {ePRESSED = 1, eUNPRESSED = 2};
 int currentState;
 unsigned long pressedTime  = 0;
 unsigned long releasedTime = 0;
-const int SHORT_PRESS_TIME = 3000; // 3 seconds
+const int SHORT_PRESS_TIME = 1000; // 1 second
+
+int addr = 1;
 
 void setup() {
+//  EEPROM.write(0, 0);
   Serial.begin(9600);
   pinMode(MANUAL_LED, OUTPUT);
   pinMode(AUTO_LED, OUTPUT);
@@ -32,13 +36,27 @@ void setup() {
   myservo[SHOULDER].attach(SHOULDER_SERVO);
   myservo[BASE].attach(BASE_SERVO);
   attachInterrupt(digitalPinToInterrupt(ENTER_BUTTON),EnterButtonPressed,RISING); 
+  int total_steps = EEPROM.read(0);
+  if(total_steps > 0){
+    Serial.print("programmed step number : ");Serial.println((total_steps-1)/4);
+    int read_addr = 1;
+    while(read_addr < total_steps){
+      for(int i = 0; i < 4; i++){
+        Serial.print("[");Serial.print(EEPROM.read(read_addr + i));Serial.print("]");
+      }
+      read_addr +=4;
+      Serial.print("\n");
+    }
+  } else {
+    Serial.println("robot not programmed");
+  }
 }
 
 void loop() {
   operatingMode = GetOperatingMode();
   OperatingModeIndication(operatingMode);
 
-  if(operatingMode == MANUAL_MODE){
+  if((operatingMode == MANUAL_MODE) || (operatingMode == PROGRAM_MODE)){
     MoveArmManually();
   }
   if(operatingMode == AUTO_MODE){
@@ -48,7 +66,15 @@ void loop() {
 
 void EnterButtonPressed()
 {
-  Serial.println("enter button pressed");
+  if(operatingMode == PROGRAM_MODE){
+    for(int i = 0; i < 4; i++){
+      EEPROM.write(addr + i, map(ADC_values[i], 0, maxADCval, 0, 180));
+      Serial.print("[");Serial.print(map(ADC_values[i], 0, maxADCval, 0, 180));Serial.print("]");
+    }
+    addr += 4;//4 positions of servos written
+    EEPROM.write(0, addr);//store the numbers of steps on address 0
+    Serial.print("->");Serial.println((addr-1)/4);
+  }
 }
 void MoveArmFromProgrammedLocations(void)
 {
@@ -69,10 +95,12 @@ int GetOperatingMode(void)
 {
   if((digitalRead(MANUAL_BUTTON) == HIGH) && (prevOperatingMode != MANUAL_MODE)){
     prevOperatingMode = MANUAL_MODE;
+    Serial.println("MANUAL_MODE");
     return MANUAL_MODE;
   }
   if((digitalRead(AUTO_BUTTON) == HIGH) && (prevOperatingMode != AUTO_MODE)){
     prevOperatingMode = AUTO_MODE;
+    Serial.println("MANUAL_MODE");
     return AUTO_MODE;
   }
   // Press and hold for 3s for programming mode in MANUAL mode.
@@ -87,6 +115,7 @@ int GetOperatingMode(void)
       if( pressDuration > SHORT_PRESS_TIME ){
         prevOperatingMode = PROGRAM_MODE;
         pressDuration = 0;
+        Serial.println("PROGRAM_MODE");
         return PROGRAM_MODE;
       }
     }
