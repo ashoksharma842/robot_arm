@@ -26,22 +26,33 @@ void setup() {
 }
 
 void loop() {
-  operatingMode = getOperatingMode();
+  operatingMode = GetOperatingMode();
   OperatingModeIndication(operatingMode);
-  
+
+  if(operatingMode == MANUAL_MODE){
+    MoveArmManually();
+  }
+  if(operatingMode == AUTO_MODE){
+    MoveArmFromProgrammedLocations();
+  }
+}
+
+void MoveArmFromProgrammedLocations(void)
+{
+  //todo
+}
+void MoveArmManually(void)
+{
   for(int i = 0; i < 4; i++){
     for(int j = 0; j < 10; j++){
       avg += analogRead(i);
     }
     ADC_values[i] = avg/10;
+    myservo[i].write(map(ADC_values[i], 0, maxADCval, 0, 180));
     avg = 0;
   }
-  for(int i = 0; i < 4; i++){
-    myservo[i].write(map(ADC_values[i], 0, maxADCval, 0, 180));
-  }
 }
-
-int getOperatingMode(void)
+int GetOperatingMode(void)
 {
   if(digitalRead(MANUAL_BUTTON) == HIGH){
     return MANUAL_MODE;
