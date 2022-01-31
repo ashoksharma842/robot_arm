@@ -26,15 +26,7 @@ void setup() {
 }
 
 void loop() {
-  if(digitalRead(MANUAL_BUTTON) == HIGH){
-    operatingMode = MANUAL_MODE;
-  }
-  if(digitalRead(AUTO_BUTTON) == HIGH){
-    operatingMode = AUTO_MODE;
-  }
-  if(digitalRead(PROGRAM_BUTTON) == HIGH){
-    operatingMode = PROGRAM_MODE;
-  }
+  operatingMode = getOperatingMode();
   OperatingModeIndication(operatingMode);
   
   for(int i = 0; i < 4; i++){
@@ -42,16 +34,25 @@ void loop() {
       avg += analogRead(i);
     }
     ADC_values[i] = avg/10;
-    Serial.print("[");Serial.print(ADC_values[i]);Serial.print("]");
     avg = 0;
   }
-  Serial.print("\n");
-  myservo[BASE].write(map(ADC_values[BASE], 0, maxADCval, 0, 180));
-  myservo[SHOULDER].write(map(ADC_values[SHOULDER], 0, maxADCval, 0, 180));
-  myservo[ELBOW].write(map(ADC_values[ELBOW], 0, maxADCval, 0, 180));
-  myservo[GRIP].write(map(ADC_values[GRIP], 0, maxADCval, 0, 180));
+  for(int i = 0; i < 4; i++){
+    myservo[i].write(map(ADC_values[i], 0, maxADCval, 0, 180));
+  }
 }
 
+int getOperatingMode(void)
+{
+  if(digitalRead(MANUAL_BUTTON) == HIGH){
+    return MANUAL_MODE;
+  }
+  if(digitalRead(AUTO_BUTTON) == HIGH){
+    return AUTO_MODE;
+  }
+  if(digitalRead(PROGRAM_BUTTON) == HIGH){
+    return PROGRAM_MODE;
+  }
+}
 void OperatingModeIndication(int mode)
 {
    switch(mode){
