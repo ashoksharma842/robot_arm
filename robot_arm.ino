@@ -6,9 +6,17 @@ enum eBUTTONS {MANUAL_BUTTON = 2, ENTER_BUTTON, AUTO_BUTTON, PROGRAM_BUTTON};
 enum eADC_DATA {BASE = 0, SHOULDER, ELBOW, GRIP};
 volatile int ADC_values[4] = {0};
 enum eOPERATING_MODE{MANUAL_MODE = 0, AUTO_MODE, PROGRAM_MODE};
-int operatingMode = MANUAL_MODE;
+int operatingMode = MANUAL_MODE, prevOperatingMode = AUTO_MODE;
 unsigned int avg = 0;
 const unsigned int maxADCval = 1023; //check the max value of ADC
+
+// Variables for long press of programming mode:
+int lastState = LOW;
+enum eButtonStae {ePRESSED = 1, eUNPRESSED = 2};
+int currentState;
+unsigned long pressedTime  = 0;
+unsigned long releasedTime = 0;
+const int SHORT_PRESS_TIME = 3000; // 3 seconds
 
 void setup() {
   Serial.begin(9600);
@@ -54,14 +62,30 @@ void MoveArmManually(void)
 }
 int GetOperatingMode(void)
 {
-  if(digitalRead(MANUAL_BUTTON) == HIGH){
+  if((digitalRead(MANUAL_BUTTON) == HIGH) && (prevOperatingMode != MANUAL_MODE)){
+    prevOperatingMode = MANUAL_MODE;
     return MANUAL_MODE;
   }
-  if(digitalRead(AUTO_BUTTON) == HIGH){
+  if((digitalRead(AUTO_BUTTON) == HIGH) && (prevOperatingMode != AUTO_MODE)){
+    prevOperatingMode = AUTO_MODE;
     return AUTO_MODE;
   }
-  if(digitalRead(PROGRAM_BUTTON) == HIGH){
-    return PROGRAM_MODE;
+  // Press and hold for 3s for programming mode in MANUAL mode.
+  if((operatingMode == MANUAL_MODE) && (prevOperatingMode != PROGRAM_MODE)){
+    if((digitalRead(PROGRAM_BUTTON) == HIGH) && (lastState == LOW)){// button is pressed
+      pressedTime = millis();
+      currentState = ePRESSED;
+    }else if((digitalRead(PROGRAM_BUTTON) == LOW) &&(lastState == HIGH) && (currentState == ePRESSED)){// button is released
+      releasedTime = millis();
+      currentState = eUNPRESSED;
+      long pressDuration = releasedTime - pressedTime;
+      if( pressDuration > SHORT_PRESS_TIME ){
+        prevOperatingMode = PROGRAM_MODE;
+        pressDuration = 0;
+        return PROGRAM_MODE;
+      }
+    }
+    lastState = digitalRead(PROGRAM_BUTTON);
   }
 }
 void OperatingModeIndication(int mode)
