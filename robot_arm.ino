@@ -7,6 +7,7 @@ enum eLED {MANUAL_LED = 10, AUTO_LED, PROGRAM_LED};
 enum eBUTTONS {MANUAL_BUTTON = 2, ENTER_BUTTON, AUTO_BUTTON, PROGRAM_BUTTON};
 enum eADC_DATA {BASE = 0, SHOULDER, ELBOW, GRIP};
 volatile int ADC_values[4] = {0};
+int prev_ADC_values[4] = {0};
 enum eOPERATING_MODE{MANUAL_MODE = 0, AUTO_MODE, PROGRAM_MODE};
 int operatingMode = MANUAL_MODE, prevOperatingMode = MANUAL_MODE;
 unsigned int avg = 0;
@@ -24,14 +25,14 @@ int addr = 1;
 int total_steps = 0;
 int EEPROM_Space = 0;
 int programCopy[100] = {0};
+
 //  to eliminate delay
 void SetMotorStatus();
 noDelay Delaytime(1000, SetMotorStatus);
 int delayState = 0;
+
 void setup() {
-//  EEPROM.write(0, 0);
   Serial.begin(9600);
-  Serial.println("----------setup----------");
   pinMode(MANUAL_LED, OUTPUT);
   pinMode(AUTO_LED, OUTPUT);
   pinMode(PROGRAM_LED, OUTPUT);
@@ -42,7 +43,6 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(ENTER_BUTTON),EnterButtonPressed,RISING);
   attachInterrupt(digitalPinToInterrupt(MANUAL_BUTTON),ManualButtonPressed,RISING);
   EEPROM_Space = EEPROM.length();
-  Serial.print("EEPROM_Space : ");Serial.println(EEPROM_Space);
   total_steps = EEPROM.read(0);
   if(total_steps > 0){
     Serial.print("programmed step number : ");Serial.println((total_steps-1)/4);
@@ -57,13 +57,11 @@ void setup() {
   } else {
     Serial.println("robot not programmed");
   }
-  Serial.println("before starting motors");
   MoveArmManually();
   myservo[GRIP].attach(GRIP_SERVO);
   myservo[ELBOW].attach(ELBOW_SERVO);
   myservo[SHOULDER].attach(SHOULDER_SERVO);
   myservo[BASE].attach(BASE_SERVO);
-  Serial.println("----------loop----------");
 }
 
 void loop() {
@@ -84,7 +82,7 @@ void SetMotorStatus()
 }
 void MoveSmoothly(Servo servoMotor, int servoPosition)
 {
-  int delaytime = 25;
+  int delaytime = 10;
   int initPosition = servoMotor.read();
   if(initPosition < servoPosition){
     for(int i = initPosition; i < servoPosition; i++){
@@ -139,7 +137,10 @@ void MoveArmManually(void)
       avg += analogRead(i);
     }
     ADC_values[i] = avg/10;
-    MoveSmoothly(myservo[i],(map(ADC_values[i], 0, maxADCval, 0, 180)));
+    if(memcmp(prev_ADC_values, ADC_values, sizeof(ADC_values)) != 0){
+      MoveSmoothly(myservo[i],(map(ADC_values[i], 0, maxADCval, 0, 180)));
+      memcpy(prev_ADC_values, ADC_values, sizeof(ADC_values));
+    }
     avg = 0;
   }
 }
