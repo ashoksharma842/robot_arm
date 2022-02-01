@@ -1,6 +1,21 @@
+/*
+ * robot_arm
+ *
+ * The basic Robot arm project.
+ * It takes 4 inputs from 4 Potentiometers and moves 4 servo motors accordingly
+ * It works in 3 modes : AUTO, MANUAL and PROGRAM
+ * Modes are changed using 3 push buttons, and indicated by LEDs
+ * In MANUAL mode servos move wrt potentiometer
+ * PROGRAM mode is activated by long press of program button in Manual mode
+ * In PROGRAM mode, program is saved using Enter button
+ * In AUTO mode, the saved program is run in a loop with some delay.
+ *
+ * https://github.com/ashoksharma842/robot_arm
+ */
 #include <Servo.h>
 #include <EEPROM.h>
 #include<NoDelay.h>
+
 Servo myservo[4];
 enum eSERVO {GRIP_SERVO = 6, ELBOW_SERVO, SHOULDER_SERVO, BASE_SERVO};
 enum eLED {MANUAL_LED = 10, AUTO_LED, PROGRAM_LED};
@@ -80,6 +95,7 @@ void SetMotorStatus()
 {
   delayState = 1;
 }
+
 void MoveSmoothly(Servo servoMotor, int servoPosition)
 {
   int delaytime = 10;
@@ -96,10 +112,12 @@ void MoveSmoothly(Servo servoMotor, int servoPosition)
     }
   }
 }
+
 void ManualButtonPressed()
 {
   operatingMode = MANUAL_MODE;
 }
+
 void EnterButtonPressed()
 {
   if(operatingMode == PROGRAM_MODE){
@@ -112,6 +130,7 @@ void EnterButtonPressed()
     Serial.print("->");Serial.println((addr-1)/4);
   }
 }
+
 void MoveArmFromProgrammedLocations(void)
 {
   read_addr = 1;
@@ -130,6 +149,7 @@ void MoveArmFromProgrammedLocations(void)
     read_addr +=4;
   }
 }
+
 void MoveArmManually(void)
 {
   for(int i = 0; i < 4; i++){
@@ -144,6 +164,7 @@ void MoveArmManually(void)
     avg = 0;
   }
 }
+
 int GetOperatingMode(void)
 {
   if((digitalRead(MANUAL_BUTTON) == HIGH) && (prevOperatingMode != MANUAL_MODE)){
@@ -175,6 +196,7 @@ int GetOperatingMode(void)
     lastState = digitalRead(PROGRAM_BUTTON);
   }
 }
+
 void OperatingModeIndication(int mode)
 {
    switch(mode){
