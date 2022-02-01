@@ -23,3 +23,5 @@ Connections:
  * MANUAL_BUTTON = 2, ENTER_BUTTON = 3, AUTO_BUTTON = 4, PROGRAM_BUTTON = 5
  * BASE_ADC = 0, SHOULDER_ADC = 1, ELBOW_ADC = 2, GRIP_ADC = 3, DELAY_ADC = 4;
  * LM2596 module output connected to 5V and "NOT TO VIN" and CONNECT ALL THE GROUNDs together
+ 
+Adding "NoDelay" header file from Tools>Manage Libraries.. might be required
