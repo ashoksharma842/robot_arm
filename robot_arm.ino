@@ -35,10 +35,6 @@ void setup() {
   pinMode(ENTER_BUTTON, INPUT);
   pinMode(AUTO_BUTTON, INPUT);
   pinMode(PROGRAM_BUTTON, INPUT);
-  myservo[GRIP].attach(GRIP_SERVO);
-  myservo[ELBOW].attach(ELBOW_SERVO);
-  myservo[SHOULDER].attach(SHOULDER_SERVO);
-  myservo[BASE].attach(BASE_SERVO);
   attachInterrupt(digitalPinToInterrupt(ENTER_BUTTON),EnterButtonPressed,RISING);
   attachInterrupt(digitalPinToInterrupt(MANUAL_BUTTON),ManualButtonPressed,RISING);
   EEPROM_Space = EEPROM.length();
@@ -58,6 +54,11 @@ void setup() {
     Serial.println("robot not programmed");
   }
   Serial.println("before starting motors");
+  MoveArmManually();
+  myservo[GRIP].attach(GRIP_SERVO);
+  myservo[ELBOW].attach(ELBOW_SERVO);
+  myservo[SHOULDER].attach(SHOULDER_SERVO);
+  myservo[BASE].attach(BASE_SERVO);
   Serial.println("----------loop----------");
 }
 
