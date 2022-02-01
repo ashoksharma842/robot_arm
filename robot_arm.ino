@@ -57,6 +57,7 @@ void setup() {
   } else {
     Serial.println("robot not programmed");
   }
+  Serial.println("before starting motors");
   Serial.println("----------loop----------");
 }
 
@@ -69,6 +70,22 @@ void loop() {
   }
   if(operatingMode == AUTO_MODE){
     MoveArmFromProgrammedLocations();
+  }
+}
+
+void MoveSmoothly(Servo servoMotor, int servoPosition)
+{
+  int initPosition = servoMotor.read();
+  if(initPosition < servoPosition){
+    for(int i = initPosition; i < servoPosition; i++){
+      servoMotor.write(i);
+      delay(5);
+    }
+  }else{
+    for(int i = initPosition; i > servoPosition; i--){
+      servoMotor.write(i);
+      delay(5);
+    }
   }
 }
 void ManualButtonPressed()
@@ -92,7 +109,7 @@ void MoveArmFromProgrammedLocations(void)
   read_addr = 1;
   while(read_addr < total_steps){
     for(int i = 0; i < 4; i++){
-      if(operatingMode == AUTO_MODE) myservo[i].write(programCopy[read_addr + i]);
+      if(operatingMode == AUTO_MODE) MoveSmoothly(myservo[i],(programCopy[read_addr + i]));
       Serial.print("[");Serial.print(programCopy[read_addr + i]);Serial.print("]");
       if(operatingMode != AUTO_MODE)return;
       delay(1000);
@@ -108,7 +125,7 @@ void MoveArmManually(void)
       avg += analogRead(i);
     }
     ADC_values[i] = avg/10;
-    myservo[i].write(map(ADC_values[i], 0, maxADCval, 0, 180));
+    MoveSmoothly(myservo[i],(map(ADC_values[i], 0, maxADCval, 0, 180)));
     avg = 0;
   }
 }
