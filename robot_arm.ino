@@ -1,5 +1,6 @@
 #include <Servo.h>
 #include <EEPROM.h>
+#include<NoDelay.h>
 Servo myservo[4];
 enum eSERVO {GRIP_SERVO = 6, ELBOW_SERVO, SHOULDER_SERVO, BASE_SERVO};
 enum eLED {MANUAL_LED = 10, AUTO_LED, PROGRAM_LED};
@@ -23,7 +24,10 @@ int addr = 1;
 int total_steps = 0;
 int EEPROM_Space = 0;
 int programCopy[100] = {0};
-
+//  to eliminate delay
+void SetMotorStatus();
+noDelay Delaytime(1000, SetMotorStatus);
+int delayState = 0;
 void setup() {
 //  EEPROM.write(0, 0);
   Serial.begin(9600);
@@ -74,18 +78,23 @@ void loop() {
   }
 }
 
+void SetMotorStatus()
+{
+  delayState = 1;
+}
 void MoveSmoothly(Servo servoMotor, int servoPosition)
 {
+  int delaytime = 25;
   int initPosition = servoMotor.read();
   if(initPosition < servoPosition){
     for(int i = initPosition; i < servoPosition; i++){
       servoMotor.write(i);
-      delay(5);
+      delay(delaytime);
     }
   }else{
     for(int i = initPosition; i > servoPosition; i--){
       servoMotor.write(i);
-      delay(5);
+      delay(delaytime);
     }
   }
 }
@@ -109,14 +118,18 @@ void MoveArmFromProgrammedLocations(void)
 {
   read_addr = 1;
   while(read_addr < total_steps){
-    for(int i = 0; i < 4; i++){
-      if(operatingMode == AUTO_MODE) MoveSmoothly(myservo[i],(programCopy[read_addr + i]));
-      Serial.print("[");Serial.print(programCopy[read_addr + i]);Serial.print("]");
-      if(operatingMode != AUTO_MODE)return;
-      delay(1000);
+    for(int i = 0; i < 4;){
+      if(delayState){
+        MoveSmoothly(myservo[i],(programCopy[read_addr + i]));
+        Serial.print("[");Serial.print(programCopy[read_addr + i]);Serial.print("]");
+        if(i==3)Serial.print("\n");
+        delayState = 0;
+        i++;
       }
+      if(operatingMode != AUTO_MODE)return;
+      Delaytime.update();
+    }
     read_addr +=4;
-    Serial.print("\n");
   }
 }
 void MoveArmManually(void)
